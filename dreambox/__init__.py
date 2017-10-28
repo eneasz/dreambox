@@ -1,11 +1,10 @@
-import sys, time
+import sys
 from lxml.etree import ElementTree
 from lxml.etree import ParseError
 from urllib import request as askurl
 
 
 def build_tree(request):
-	print('stuff')
 	try:
 		tree = ElementTree().parse(request)
 	except ParseError as err:
@@ -48,7 +47,8 @@ class dreambox(object):
 				e2eventdescriptionextended = details.find('.//e2eventdescriptionextended').text
 			except ArithmeticError as e:
 				print('Element error: {err}'.format(err=e))
-		return (e2servicename, e2providername, e2servicevideosize, e2eventservicereference, e2eventname, e2eventdescriptionextended)
+		return (e2servicename, e2providername, e2servicevideosize, e2eventservicereference, e2eventname,
+				e2eventdescriptionextended)
 
 	def get_audio_status(self):
 		request = self.api_handle('vol?set=state')
@@ -78,17 +78,15 @@ class dreambox(object):
 		tree = build_tree(request)
 		for movie in tree.getiterator('e2movie'):
 			try:
-				movies.append( movie.find('.//e2title').text)
+				movies.append(movie.find('.//e2title').text)
 			except AttributeError as e:
 				print('Element error: {err}'.format(err=e))
 		return movies
 
-
-	def volume_set(self,volume_level):
+	def volume_set(self, volume_level):
 		self.api_handle('vol?set=set{0}'.format(volume_level))
 		worked, volume_status, mute_status = self.get_audio_status()
 		return (worked, volume_status, mute_status)
-
 
 	def send_key(self, key):
 		request = self.api_handle('remotecontrol?command={0}'.format(str(key)))
@@ -106,7 +104,6 @@ class dreambox(object):
 		for key in str(channel):
 			key = int(key) + 1
 			self.send_key(key)
-			time.sleep(1)
 
 	def record_now(self):
 		self.api_handle('recordnow')
