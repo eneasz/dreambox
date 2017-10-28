@@ -2,7 +2,7 @@ from distutils.core import setup
 setup(
   name = 'dreambox',
   packages = ['dreambox'], 
-  version = '0.1',
+  version = '0.3',
   description = 'Dreambox lib, tested with dm-800HD se',
   author = 'Damiano Pertolunio',
   author_email = 'spamtrap@gmail.com',

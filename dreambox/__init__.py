@@ -153,7 +153,3 @@ class dreambox(object):
 	def video(self):
 		self.send_key('393')
 
-
-
-if __name__ ==  "__main__":
-	my_dreambox = dreambox()
