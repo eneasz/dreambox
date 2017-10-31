@@ -13,7 +13,7 @@ def build_tree(request):
 	return tree
 
 
-class dreambox(object):
+class Receiver(object):
 	def __init__(self, ip='192.168.1.183', port=80):
 		self.ip = ip
 		self.port = str(port)
@@ -72,7 +72,7 @@ class dreambox(object):
 			e2audiotrackactive = audio.find('.//e2audiotrackactive').text
 			print(e2audiotrackdescription, e2audiotrackid, e2audiotrackpid, e2audiotrackactive)
 
-	def movi_list(self):
+	def recording_list(self):
 		movies = []
 		request = self.api_handle('movielist')
 		tree = build_tree(request)
