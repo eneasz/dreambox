@@ -36,7 +36,7 @@ Lists info about current audio tracks
 - e2audiotrackactive
 
 ##### recording_list
-Returns list of recordings
+Returns list of recordings in dictionary format
 
 ##### volume_set
 Set's volume to requested value and returns:
@@ -49,6 +49,33 @@ Sets channel to  channel #
 
 ##### record_now
 Set's recording timmer to record current program
+
+##### get_timerlist
+Returns information about timer:
+- e2servicereference
+- e2servicename
+- e2name
+- e2timebegin
+- e2timeend
+- e2duration
+
+##### timer_cleanup
+Clears timers, returns e2statetext
+
+##### recording_delete
+Requires e2servicereference
+Deletes movie from the disk
+
+##### del_timer
+Requires (timer_id, begin, end)
+Deletes the timer
+
+##### stream_curent_channel
+Returns m3u playlist for current channel
+
+##### change_audio_channel
+Requires track_nr
+Switching audio channel to track_nr
 
 ##### volume_up
 Sets volume up
@@ -67,3 +94,12 @@ Power toggle
 
 ##### info
 Button info
+
+##### pause
+Pause button
+
+##### play
+Play button
+
+##### exit
+Exit button

@@ -2,6 +2,8 @@ import sys
 from lxml.etree import ElementTree
 from lxml.etree import ParseError
 from urllib import request as askurl
+from bs4 import BeautifulSoup
+
 
 
 def build_tree(request):
@@ -17,9 +19,10 @@ class Receiver(object):
 	def __init__(self, ip='192.168.1.183', port=80):
 		self.ip = ip
 		self.port = str(port)
+		self.url = 'http://{0}:{1}/web/'.format(self.ip, self.port)
 
 	def api_handle(self, append_url):
-		url = 'http://{0}:{1}/web/{2}'.format(self.ip, self.port, append_url)
+		url = '{0}/{1}'.format(self.url, append_url)
 		request = askurl.Request(url)
 		response = askurl.urlopen(request)
 		return response
@@ -50,6 +53,37 @@ class Receiver(object):
 		return (e2servicename, e2providername, e2servicevideosize, e2eventservicereference, e2eventname,
 				e2eventdescriptionextended)
 
+	def get_timerlist(self):
+		request = self.api_handle('timerlist')
+		tree = build_tree(request)
+		for timer in tree.getiterator('e2timer'):
+			try:
+				e2servicereference = timer.find('.//e2servicereference').text
+				e2servicename = timer.find('.//e2servicename').text
+				e2name = timer.find('.//e2name').text
+				e2timebegin = timer.find('.//e2timebegin').text
+				e2timeend = timer.find('.//e2timeend').text
+				e2duration = timer.find('.//e2duration').text
+			except ArithmeticError as e:
+				print('Element error: {err}'.format(err=e))
+		try:
+			return (e2servicereference, e2servicename, e2name, e2timebegin, e2timeend, e2duration)
+		except:
+			return ('NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE')
+
+	def timer_cleanup(self):
+		request = self.api_handle('timercleanup?cleanup=')
+		tree = build_tree(request)
+		for response in tree.getiterator('e2simplexmlresult'):
+			try:
+				e2statetext = response.find('.//e2statetext').text
+			except ArithmeticError as e:
+				print('Element error: {err}'.format(err=e))
+		try:
+			return e2statetext
+		except:
+			return ('NONE')
+
 	def get_audio_status(self):
 		request = self.api_handle('vol?set=state')
 		tree = build_tree(request)
@@ -73,20 +107,62 @@ class Receiver(object):
 			print(e2audiotrackdescription, e2audiotrackid, e2audiotrackpid, e2audiotrackactive)
 
 	def recording_list(self):
-		movies = []
+		movies = {}
 		request = self.api_handle('movielist')
 		tree = build_tree(request)
 		for movie in tree.getiterator('e2movie'):
 			try:
-				movies.append(movie.find('.//e2title').text)
+				e2servicereference = movie.find('.//e2servicereference').text
+				service = e2servicereference.split(':')[10].replace(" ", "%20")
+				movies[movie.find('.//e2title').text] = [self.url + 'ts.m3u?file=' + service, e2servicereference]
 			except AttributeError as e:
 				print('Element error: {err}'.format(err=e))
 		return movies
+
+	def recording_delete(self, e2servicereference):
+		request = self.api_handle('moviedelete?sRef={0}'.format(e2servicereference.replace(" ", "%20")))
+		tree = build_tree(request)
+		for result in tree.getiterator('e2simplexmlresult'):
+			try:
+				e2state = result.find('.//e2state').text
+				e2statetext = result.find('.//e2statetext').text
+			except AttributeError as e:
+				print('Element error: {err}'.format(err=e))
+		return (e2state, e2statetext)
+
+
+	def del_timer(self, timer_id, begin, end):
+		request = self.api_handle('timerdelete?sRef={0}&begin={1}&end={2}'.format(timer_id, begin, end))
+		tree = build_tree(request)
+		for result in tree.getiterator('e2simplexmlresult'):
+			try:
+				e2state = result.find('.//e2state').text
+				e2statetext = result.find('.//e2statetext').text
+			except AttributeError as e:
+				print('Element error: {err}'.format(err=e))
+		return (e2state, e2statetext)
+
+	def stream_curent_channel(self):
+		request = self.api_handle('subservices')
+		tree = build_tree(request)
+		for n, stream in enumerate(tree.getiterator('e2service')):
+			try:
+				print(stream.find('.//e2servicereference').text)
+				print(stream.find('.//e2servicename').text)
+				stream_id = stream.find('.//e2servicereference').text
+				stream_name = stream.find('.//e2servicename').text
+				stream_url = 'http://{0}:{1}/web/stream.m3u?ref={2}&name={3}'.format(self.ip, self.port, stream_id, stream_name)
+			except AttributeError as e:
+				print('Element error: {err}'.format(err=e))
+		return stream_url.replace(" ", "%20")
 
 	def volume_set(self, volume_level):
 		self.api_handle('vol?set=set{0}'.format(volume_level))
 		worked, volume_status, mute_status = self.get_audio_status()
 		return (worked, volume_status, mute_status)
+
+	def change_audio_channel(self, track_nr):
+		self.api_handle('selectaudiotrack?id={0}'.format(track_nr))
 
 	def send_key(self, key):
 		request = self.api_handle('remotecontrol?command={0}'.format(str(key)))
@@ -150,3 +226,30 @@ class Receiver(object):
 	def video(self):
 		self.send_key('393')
 
+	def pause(self):
+		self.send_key('119')
+
+	def play(self):
+		self.send_key('207')
+	def exit(self):
+		self.send_key('174')
+
+
+box = Receiver()
+box.change_audio_channel(0)
+surl = box.stream_curent_channel()
+# #print(box.record_now())
+# print(surl)
+print(box.recording_list())
+# print(box.get_current())
+# print('Recording:')
+# print(box.get_timerlist())
+# e2servicereference, e2servicename, e2name, e2timebegin, e2timeend, e2duration = box.get_timerlist()
+# print('Canceling recording')
+# print(box.del_timer(e2servicereference, e2timebegin, e2timeend))
+# print(box.timer_cleanup())
+# movi_del = '1:0:0:0:0:0:0:0:0:0:/media/hdd/movie/20171105 0052 - TVN HD - Statek widmo.ts'#.replace(" ", "%20")
+# print(box.recording_delete(movi_del))
+# print(box.recording_list())
+print(box.stream_curent_channel())
+#box.play()
