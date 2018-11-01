@@ -189,7 +189,7 @@ class Receiver(object):
                 elif status == "true":
                     message = "Dreambox is now {0}".format(stat)
                 elif status == "false" and cmd == 4:
-                    message = "Dreambox is alerady {0}".format(stat)
+                    message = "Dreambox is alrady {0}".format(stat)
             except AttributeError as e:
                 print('Element error: {err}'.format(err=e))
         return message
